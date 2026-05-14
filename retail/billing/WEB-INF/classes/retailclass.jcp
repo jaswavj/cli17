@@ -24,7 +24,7 @@
 		</runtime>
 	</runtimes>
 	<libraries>
-		<library_ref>lib</library_ref>
+		<library_ref>libr</library_ref>
 	</libraries>
 	<files>
 		<include>

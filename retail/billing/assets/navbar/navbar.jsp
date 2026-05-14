@@ -75,7 +75,17 @@ for (int i = 0; i < vecPer.size(); i++) {
     </div>
   </div>
   
-
+  <!-- User Section -->
+  <div class="sidebar-user-section">
+    <div class="user-info">
+      <i class="fa-solid fa-user"></i>
+      <span class="user-name"><%=userNameUni%></span>
+    </div>
+    <a href="#" onclick="handleLogout(); return false;" class="sidebar-logout-btn" title="Logout">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      <span class="logout-text">Logout</span>
+    </a>
+  </div>
   <% if (permissions.contains(1)) { %>
     <a href="<%=request.getContextPath()%>/billing/billing.jsp" class="sidebar-item">
       <i class="fas fa-file-invoice"></i>
@@ -87,19 +97,22 @@ for (int i = 0; i < vecPer.size(); i++) {
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#productMenu">
         <i class="fas fa-box"></i>
-        <span>Master</span>
+        <span>Configuration</span>
         <i class="fas fa-chevron-down ms-auto"></i>
       </a>
       <div class="collapse sidebar-submenu" id="productMenu">
-
+        <a href="<%=request.getContextPath()%>/product/master/barCode/page.jsp" class="sidebar-subitem">Bar Code</a>
         <a href="<%=request.getContextPath()%>/product/master/category/category.jsp" class="sidebar-subitem"><%=head1%></a>
         <a href="<%=request.getContextPath()%>/product/master/brands/brands.jsp" class="sidebar-subitem"><%=head2%></a>
         <a href="<%=request.getContextPath()%>/product/master/product/product.jsp" class="sidebar-subitem"><%=head3%></a>
         <a href="<%=request.getContextPath()%>/product/master/productBulkUpdate/page.jsp" class="sidebar-subitem">Change <%=head3%> MRP</a>
         <a href="<%=request.getContextPath()%>/product/master/stock/stock.jsp" class="sidebar-subitem">Stock Management</a>
         <a href="<%=request.getContextPath()%>/product/master/customer/page.jsp" class="sidebar-subitem">Customers</a>
+        <!-- Customer Submenu -->
+        <a href="<%=request.getContextPath()%>/cafeOrder/tables/page.jsp" class="sidebar-subitem">Cafe Tables</a>
+
         <a href="<%=request.getContextPath()%>/product/master/units/page.jsp" class="sidebar-subitem">Units</a>
-        <a href="<%=request.getContextPath()%>/product/master/barCode/page.jsp" class="sidebar-subitem">Bar Code</a>        
+        
       </div>
     </div>
     <% } %>
@@ -316,22 +329,12 @@ for (int i = 0; i < vecPer.size(); i++) {
       </div>
     </div>
     <% } %>
-
-  </div>
-
-  <!-- User Section (bottom) -->
-  <div class="sidebar-user-section" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding: 10px 12px; flex-shrink: 0;">
-    <div class="user-info" style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-      <i class="fa-solid fa-user"></i>
-      <span class="user-name" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%=userNameUni%></span>
-      <a href="<%=request.getContextPath()%>/admin/changePassword/changePassword.jsp" title="Change Password" style="color: rgba(255,255,255,0.7); font-size: 1rem; flex-shrink: 0;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
-        <i class="fa-solid fa-key"></i>
-      </a>
-    </div>
-    <a href="#" onclick="handleLogout(); return false;" class="sidebar-logout-btn" title="Logout">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i>
-      <span class="logout-text">Logout</span>
+    <% if (permissions.contains(11)) { %>
+    <a href="<%=request.getContextPath()%>/cafeOrder/orderList/page.jsp" class="sidebar-item">
+      <i class="fas fa-list-alt"></i>
+      <span>Order List</span>
     </a>
+    <% } %>
   </div>
 </div>
 

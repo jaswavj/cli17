@@ -49,7 +49,7 @@ function showCustomerAutocomplete(customers) {
     
     const list = document.createElement("ul");
     list.className = "autocomplete-list";
-    list.style.cssText = "position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; width: " + customerNameInput.offsetWidth + "px;";
+    list.style.cssText = "position: absolute; top: 100%; left: 0; z-index: 1000; background: white; border: 1px solid #ddd; list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; width: " + customerNameInput.offsetWidth + "px;"
     
     customers.forEach(customer => {
         const item = document.createElement("li");
@@ -216,7 +216,7 @@ function showPhoneAutocomplete(customers) {
     const list = document.createElement('ul');
     list.id = 'phoneAutocompleteList';
     list.className = 'autocomplete-list';
-    list.style.cssText = 'position:absolute;z-index:1000;background:white;border:1px solid #ddd;list-style:none;padding:0;margin:0;max-height:200px;overflow-y:auto;width:' + customerPhnInput.offsetWidth + 'px;';
+    list.style.cssText = 'position:absolute;top:100%;left:0;z-index:1000;background:white;border:1px solid #ddd;list-style:none;padding:0;margin:0;max-height:200px;overflow-y:auto;width:' + customerPhnInput.offsetWidth + 'px;';
 
     customers.forEach(customer => {
         const item = document.createElement('li');
@@ -257,28 +257,14 @@ function addProduct() {
     const name = document.getElementById("productName").value.trim();
     const qtyInput = parseFloat(document.getElementById("productQty").value);
     const price = parseFloat(document.getElementById("productPrice").value);
-    const discount = parseFloat(document.getElementById("productDiscount").value);
+    const discount = 0;
     const selectedUnit = document.getElementById("productUnit").value;
     const unitName = document.getElementById("productUnitName").value;
     const convertionUnit = (document.getElementById("productConvertionUnit").value || '').trim();
 
-    if (code === "" || name === "" || isNaN(qtyInput) || isNaN(price) || isNaN(discount)) {
+    if (code === "" || name === "" || isNaN(qtyInput) || isNaN(price)) {
         alert("Please enter valid product details!");
         return;
-    }
-
-    // Validate per-product discount does not exceed user's allowed percentage
-    if (price > 0 && userMaxDiscPer < 100) {
-        const discPct = (discount / price) * 100;
-        if (discPct > userMaxDiscPer) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Discount Exceeded',
-                html: `Product discount <b>${discPct.toFixed(2)}%</b> exceeds your allowed limit of <b>${userMaxDiscPer}%</b>.`,
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
     }
 
     const productId = parseInt(document.getElementById("productCode").dataset.id || 0);
@@ -374,17 +360,18 @@ function addProduct() {
     grandTotal += total;
 
     const row = `
-        <tr id="row${count}" data-batch-id="${productBatch}" data-commission="${productCommission}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;">
+        <tr id="row${count}" data-batch-id="${productBatch}" data-commission="${productCommission}" data-subtotal="${productSubtotal}" data-discount="0" data-total="${total}" data-qty="${actualQty}" data-price="${price}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;">
             <td style="width: 5%;">${count}</td>
             <td style="width: 10%;" data-id="${productId}">${code}</td>
-            <td style="width: 32%;" data-name="${name}">${name}</td>
+            <td style="width: 22%;" data-name="${name}">${name}</td>
             <td style="width: 8%;">${displayQty} ${displayUnit}</td>
             <td style="width: 10%;">₹${price.toFixed(3)}</td>
-            <td style="width: 10%;">₹${productDiscount.toFixed(3)}</td>
-            <td style="width: 10%;">₹${total.toFixed(3)}</td>
+            <td style="width: 10%;"><input type="number" class="disc-inp" value="0" min="0" step="0.01" onclick="this.select(); event.stopPropagation();" onfocus="this.select();" onchange="updateRowDiscount(${count})" style="width:100%;height:26px;border:1px solid #d1d9e6;border-radius:4px;padding:0 4px;font-size:12px;text-align:right;background:#f8fafc;color:#0f172a;"></td>
+            <td style="width: 10%;">₹${commissionAmount.toFixed(3)}</td>
+            <td style="width: 10%;" class="row-total">₹${total.toFixed(3)}</td>
             <td style="width: 15%;">
                 <button class="btn btn-danger btn-sm" 
-                    onclick="event.stopPropagation(); removeProduct(${count}, ${productSubtotal}, ${productDiscount}, ${commissionAmount}, ${total})">
+                    onclick="event.stopPropagation(); removeProduct(${count})">
                     Delete
                 </button>
             </td>
@@ -422,7 +409,6 @@ function addProduct() {
     document.getElementById("productName").value = "";
     document.getElementById("productQty").value = "1";
     document.getElementById("productPrice").value = "";
-    document.getElementById("productDiscount").value = "0";
     document.getElementById("productUnit").value = "";
     document.getElementById("productUnit").disabled = true;
     document.getElementById("productUnitId").value = "";
@@ -513,10 +499,13 @@ function refreshCommissionDisplay() {
     updatePayableAmount();
 }
 
-function removeProduct(rowId, rowSubtotal, rowDiscount, rowCommission, rowTotal) {
+function removeProduct(rowId) {
     const row = document.getElementById(`row${rowId}`);
-     if (!row) return;
-     const currentRowCommission = parseFloat(row.dataset.commissionAmount || rowCommission || 0);
+    if (!row) return;
+    const rowSubtotal = parseFloat(row.dataset.subtotal || 0);
+    const rowDiscount = parseFloat(row.dataset.discount || 0);
+    const rowTotal = parseFloat(row.dataset.total || 0);
+    const currentRowCommission = parseFloat(row.dataset.commissionAmount || 0);
     
     // Update product quantities tracker
     const productId = parseInt(row.dataset.productId);
@@ -533,6 +522,35 @@ function removeProduct(rowId, rowSubtotal, rowDiscount, rowCommission, rowTotal)
     totalDiscount -= rowDiscount;
     totalCommission -= currentRowCommission;
     grandTotal -= rowTotal;
+
+    updateTotals();
+    updatePayableAmount();
+}
+function updateRowDiscount(rowId) {
+    const row = document.getElementById(`row${rowId}`);
+    if (!row) return;
+    const discInput = row.querySelector('.disc-inp');
+    let newDisc = parseFloat(discInput.value) || 0;
+    const productSubtotal = parseFloat(row.dataset.subtotal) || 0;
+    const oldDiscount = parseFloat(row.dataset.discount) || 0;
+    const oldTotal = parseFloat(row.dataset.total) || 0;
+
+    // Cap discount at subtotal
+    if (newDisc > productSubtotal) {
+        newDisc = productSubtotal;
+        discInput.value = newDisc.toFixed(2);
+    }
+
+    const newTotal = productSubtotal - newDisc;
+    totalDiscount = totalDiscount - oldDiscount + newDisc;
+    grandTotal = grandTotal - oldTotal + newTotal;
+
+    row.dataset.discount = newDisc;
+    row.dataset.total = newTotal;
+
+    // Update total cell (index 7)
+    const tds = row.querySelectorAll('td');
+    tds[7].textContent = '\u20b9' + newTotal.toFixed(3);
 
     updateTotals();
     updatePayableAmount();
@@ -669,7 +687,7 @@ function saveBill() {
     let customerName = document.getElementById("customerName").value.trim();
     let customerPhn = document.getElementById("customerPhn").value.trim();
     let customerId = document.getElementById("customerId").value;
-    if (!customerId || customerId === "0") customerId = "1";
+    if ((!customerId || customerId === "0") && (customerName === "" || customerName === "-")) customerId = "1";
     let attenderId = document.getElementById("attenderId") ? document.getElementById("attenderId").value : "";
     
     // Get tax bill checkbox value
@@ -734,7 +752,8 @@ function saveBill() {
         const id = parseInt(cols[1].dataset.id || 0);
         const qty = parseFloat(cols[3].innerText) || 0;
         const price = parseFloat(cols[4].innerText.replace("₹","")) || 0;
-        const discount = parseFloat(cols[5].innerText.replace("₹","")) || 0;
+        const discInp = cols[5].querySelector('.disc-inp');
+        const discount = discInp ? (parseFloat(discInp.value) || 0) : (parseFloat(cols[5].innerText.replace("₹","")) || 0);
         const total = parseFloat(cols[7].innerText.replace("₹","")) || 0;
         const batchId = parseInt(row.dataset.batchId || 0);
         const commission = isEligibleForCommission ? parseFloat(row.dataset.commission || 0) : 0;
@@ -1697,17 +1716,17 @@ function addOrderItemToBill(item) {
     const batchId = item.batchId || 0;
     
     const row = `
-        <tr id="row${count}" class="item-row" style="display: table; width: 100%; table-layout: fixed;" data-batch-id="${batchId}" data-commission="0">
+        <tr id="row${count}" class="item-row bill-item-row" style="display: table; width: 100%; table-layout: fixed;" data-batch-id="${batchId}" data-commission="0" data-subtotal="${item.total}" data-discount="0" data-total="${item.total}" data-qty="${item.qty}" data-price="${item.price}">
             <td style="width: 5%;">${count}</td>
             <td style="width: 10%;" data-id="${item.prodId}">${item.code || ''}</td>
             <td style="width: 22%;">${item.prodName}</td>
             <td style="width: 8%;">${item.qty}</td>
             <td style="width: 10%;">₹${item.price.toFixed(3)}</td>
+            <td style="width: 10%;"><input type="number" class="disc-inp" value="0" min="0" step="0.01" onclick="this.select(); event.stopPropagation();" onfocus="this.select();" onchange="updateRowDiscount(${count})" style="width:100%;height:26px;border:1px solid #d1d9e6;border-radius:4px;padding:0 4px;font-size:12px;text-align:right;background:#f8fafc;color:#0f172a;"></td>
             <td style="width: 10%;">₹0.000</td>
-            <td style="width: 10%;">₹0.000</td>
-            <td style="width: 10%;">₹${item.total.toFixed(3)}</td>
+            <td style="width: 10%;" class="row-total">₹${item.total.toFixed(3)}</td>
             <td style="width: 15%;">
-                <button class="btn btn-danger btn-sm" onclick="removeProduct(${count}, ${item.total}, 0, 0, ${item.total})">
+                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); removeProduct(${count})">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -1871,8 +1890,8 @@ function saveQuotation() {
         const qty = parseFloat(qtyText.split(' ')[0]); // Remove unit suffix
         const priceText = row.querySelector('td:nth-child(5)').textContent.replace('₹', '').trim();
         const price = parseFloat(priceText);
-        const discountText = row.querySelector('td:nth-child(6)').textContent.replace('₹', '').trim();
-        const discount = parseFloat(discountText);
+        const discInp = row.querySelector('td:nth-child(6) .disc-inp');
+        const discount = discInp ? (parseFloat(discInp.value) || 0) : parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('₹', '').trim()) || 0;
         const totalText = row.querySelector('td:nth-child(8)').textContent.replace('₹', '').trim();
         const total = parseFloat(totalText);
         
@@ -2034,18 +2053,18 @@ function addProductToBillTable(product) {
     
     // Create new row with proper styling and structure
     const row = `
-        <tr id="row${count}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;" data-batch-id="${product.batchId || 0}" data-commission="${productCommissionPerUnit}">
+        <tr id="row${count}" class="bill-item-row" style="display: table; width: 100%; table-layout: fixed; cursor: pointer;" data-batch-id="${product.batchId || 0}" data-commission="${productCommissionPerUnit}" data-subtotal="${productSubtotal}" data-discount="${productDiscount}" data-total="${productTotal}" data-qty="${product.qty}" data-price="${parseFloat(product.price)}">
             <td style="width: 5%;">${count}</td>
             <td style="width: 10%;" data-id="${product.productId}">${product.code}</td>
             <td style="width: 22%;" data-name="${product.productName}">${product.productName}</td>
             <td style="width: 8%;">${product.qty}</td>
             <td style="width: 10%;">₹${parseFloat(product.price).toFixed(3)}</td>
-            <td style="width: 10%;">₹${productDiscount.toFixed(3)}</td>
+            <td style="width: 10%;"><input type="number" class="disc-inp" value="${productDiscount.toFixed(2)}" min="0" step="0.01" onclick="this.select(); event.stopPropagation();" onfocus="this.select();" onchange="updateRowDiscount(${count})" style="width:100%;height:26px;border:1px solid #d1d9e6;border-radius:4px;padding:0 4px;font-size:12px;text-align:right;background:#f8fafc;color:#0f172a;"></td>
             <td style="width: 10%;">₹${productCommissionAmount.toFixed(3)}</td>
-            <td style="width: 10%;">₹${productTotal.toFixed(3)}</td>
+            <td style="width: 10%;" class="row-total">₹${productTotal.toFixed(3)}</td>
             <td style="width: 15%;">
                 <button class="btn btn-danger btn-sm" 
-                    onclick="event.stopPropagation(); removeProduct(${count}, ${productSubtotal}, ${productDiscount}, ${productCommissionAmount}, ${productTotal})">
+                    onclick="event.stopPropagation(); removeProduct(${count})">
                     Delete
                 </button>
             </td>

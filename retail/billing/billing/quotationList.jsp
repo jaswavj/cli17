@@ -9,7 +9,7 @@ Vector quotList = bill.getQuotationList();
 <div class="modal fade" id="quotationListModal" tabindex="-1" aria-labelledby="quotationListModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
         <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #a9a8aa 0%, #7f7f7f 100%); color: white;">
+            <div class="modal-header" style="background: #2e2347; color: white;">
                 <h5 class="modal-title" id="quotationListModalLabel">
                     <i class="fas fa-clock"></i> Hold Bills
                 </h5>
@@ -23,7 +23,7 @@ Vector quotList = bill.getQuotationList();
                 <% } else { %>
                     <div class="table-responsive">
                         <table class="table table-hover table-striped mb-0">
-                            <thead style="background: #f3f4f6; position: sticky; top: 0; z-index: 1;">
+                            <thead style="background: #2e2347; color: white; position: sticky; top: 0; z-index: 1;">
                                 <tr>
                                     <th style="width: 5%;">#</th>
                                     <th style="width: 12%;">Quot. No</th>

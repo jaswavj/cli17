@@ -494,8 +494,6 @@ nav.navbar-dark.custom-navbar.fixed-top {
     overflow-x: hidden;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
 }
 
 /* Desktop: collapsed state instead of hidden */
@@ -848,11 +846,6 @@ body:not(.login-body) {
     );
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition: padding 0.3s ease;
-    flex-shrink: 0;
-}
-
-.sidebar-menu {
-    flex: 1;
 }
 
 .sidebar-logo {
