@@ -404,13 +404,12 @@ int userDiscPer = (uid != null) ? userBn.getUserDiscPer(uid) : 100;
 
             .tbl-panel { margin: 4px 6px; }
 
-            .bot-panel { padding: 5px 8px; overflow-y: auto; max-height: 42vh; }
+            .bot-panel { padding: 5px 8px 82px; overflow-y: auto; max-height: 42vh; }
 
             .bot-inner { flex-direction: column; gap: 5px; align-items: stretch; }
 
             .grp-totals,
-            .grp-pay,
-            .grp-act {
+            .grp-pay {
                 flex: none;
                 width: 100%;
                 display: grid;
@@ -419,7 +418,23 @@ int userDiscPer = (uid != null) ? userBn.getUserDiscPer(uid) : 100;
 
             .grp-totals { grid-template-columns: repeat(3, 1fr); }
             .grp-pay    { grid-template-columns: repeat(3, 1fr); }
-            .grp-act    { grid-template-columns: repeat(3, 1fr); justify-items: stretch; }
+
+            /* Action buttons: fixed bar always visible at bottom */
+            .grp-act {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 200;
+                background: var(--card);
+                border-top: 2px solid var(--border-light);
+                box-shadow: 0 -3px 10px rgba(0,0,0,.12);
+                padding: 6px 8px;
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                justify-items: stretch;
+            }
 
             .bb { justify-content: center; width: 100%; }
             .bill-badge { width: 100%; }
