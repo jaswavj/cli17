@@ -52,191 +52,383 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Item - Billing App</title>
     <%@ include file="/assets/common/head.jsp" %>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 <style>
-    /* Table wrapper for horizontal scroll */
-    .table-wrapper {
-        overflow-x: auto;
-        overflow-y: auto;
-        min-height: 280px;
-        max-height: calc(100vh - 500px);
+    /* =====================================================
+       PROFESSIONAL PURCHASE LAYOUT
+       ===================================================== */
+    :root {
+        --navy:        #2e2347;
+        --navy-dark:   #1e1630;
+        --violet:      #5c4d8a;
+        --violet-dark: #4a3d78;
+        --bg:          #f0eef5;
+        --card:        #ffffff;
+        --border:      #d1d9e6;
+        --border-light:#e8edf5;
+        --text:        #0f172a;
+        --muted:       #64748b;
+        --input-bg:    #f8fafc;
+        --red:         #dc2626;
+        --green:       #059669;
+        --shadow-sm:   0 1px 4px rgba(0,0,0,.07);
+        --shadow:      0 2px 10px rgba(0,0,0,.10);
+        --r:           7px;
+        --r-sm:        5px;
     }
-    
-    /* Fixed Table Layout */
-    .table-fixed-layout {
-        min-width: 1240px;
-        table-layout: fixed;
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        font-size: 13px;
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    /* WRAPPER */
+    .bw { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+    .bw-nav { flex-shrink: 0; }
+
+    /* TOP PANEL */
+    .top-panel {
+        flex-shrink: 0;
+        background: var(--card);
+        border-bottom: 2px solid var(--border-light);
+        padding: 7px 14px 8px;
+        box-shadow: var(--shadow-sm);
+    }
+    .tp-row { display: flex; gap: 7px; align-items: flex-end; flex-wrap: wrap; }
+
+    /* FIELD GROUP */
+    .fg { display: flex; flex-direction: column; gap: 3px; min-width: 0; position: relative; }
+    .fg-lbl {
+        font-size: 10px; font-weight: 700; color: var(--muted);
+        text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; padding-left: 1px;
+    }
+    .fg-inp {
+        height: 33px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+        padding: 0 9px; background: var(--input-bg); color: var(--text);
+        font-size: 13px; transition: border-color .15s, box-shadow .15s; outline: none; width: 100%;
+    }
+    .fg-inp:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(92,77,138,.18); background: #fff; }
+    .fg-inp[readonly] { background: #f1f5f9; color: var(--muted); }
+    .fg-sel {
+        height: 33px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+        padding: 0 7px; background: var(--input-bg); color: var(--text);
+        font-size: 13px; cursor: pointer; outline: none; transition: border-color .15s; width: 100%;
+    }
+    .fg-sel:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(92,77,138,.18); }
+
+    /* BUTTONS */
+    .bb {
+        display: inline-flex; align-items: center; gap: 5px; height: 33px;
+        padding: 0 13px; border-radius: var(--r-sm); font-size: 12px; font-weight: 700;
+        cursor: pointer; border: 1.5px solid transparent; transition: all .15s; white-space: nowrap;
+    }
+    .bb-navy { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .bb-navy:hover { background: var(--navy-dark); border-color: var(--navy-dark); }
+    .bb-outline { background: #fff; color: var(--violet); border-color: var(--violet); }
+    .bb-outline:hover { background: var(--violet); color: #fff; }
+
+    /* Icon-only action buttons inside table rows */
+    .tbl-icon-btn {
+        width: 30px; height: 30px; border-radius: 50%; border: none;
+        cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+        font-size: 13px; transition: transform .15s, box-shadow .15s, background .15s;
+        flex-shrink: 0;
+    }
+    .tbl-icon-btn:hover:not(:disabled) { transform: scale(1.13); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+    .tbl-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .tbl-icon-btn.add  { background: #dcfce7; color: #059669; }
+    .tbl-icon-btn.add:hover:not(:disabled)  { background: #bbf7d0; }
+    .tbl-icon-btn.del  { background: #fee2e2; color: #dc2626; }
+    .tbl-icon-btn.del:hover:not(:disabled)  { background: #fecaca; }
+    .tbl-icon-btn.hist { background: #ede9fe; color: #5c4d8a; }
+    .tbl-icon-btn.hist:hover:not(:disabled) { background: #ddd6fe; }
+
+    /* Bootstrap btn compat for JS-generated rows */
+    .btn { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; border: 1px solid transparent; border-radius: 4px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; transition: all .15s; }
+    .btn-sm { padding: 2px 7px; font-size: 11px; }
+
+    /* Override Bootstrap form-control inside table rows */
+    .btbl .form-control,
+    .btbl .form-control-sm {
+        height: 36px;
+        font-size: 14px;
+        padding: 0 8px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--r-sm);
+        background: var(--input-bg);
+        color: var(--text);
         width: 100%;
+        box-sizing: border-box;
+        transition: border-color .15s, box-shadow .15s;
+        outline: none;
+    }
+    .btbl .form-control:focus,
+    .btbl .form-control-sm:focus {
+        border-color: var(--violet);
+        box-shadow: 0 0 0 3px rgba(92,77,138,.18);
+        background: #fff;
+    }
+    .btbl label { font-size: 14px; font-weight: 600; }
+    .btbl small { font-size: 11px; }
+    .btn-success { background: var(--green); color: #fff; border-color: var(--green); }
+    .btn-success:hover { background: #047857; }
+    .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-info { background: #0891b2; color: #fff; border-color: #0891b2; }
+    .btn-info:hover { background: #0e7490; }
+    .btn-outline-violet { background: #fff; color: var(--violet); border-color: var(--violet); }
+    .btn-outline-violet:hover { background: var(--violet); color: #fff; }
+    .btn-outline-danger { background: #fff; color: var(--red); border-color: var(--red); }
+    .btn-outline-danger:hover { background: var(--red); color: #fff; }
+    .btn-outline-success { background: #fff; color: var(--green); border-color: var(--green); }
+    .btn-outline-success:hover { background: var(--green); color: #fff; }
+    .btn-outline-info { background: #fff; color: #0891b2; border-color: #0891b2; }
+    .btn-outline-info:hover { background: #0891b2; color: #fff; }
+    .btn-outline-secondary { background: #fff; color: var(--muted); border-color: var(--border); }
+    .btn-primary { background: var(--violet); color: #fff; border-color: var(--violet); }
+    .btn-secondary { background: var(--muted); color: #fff; border-color: var(--muted); }
+
+    /* TABLE PANEL */
+    .tbl-panel {
+        flex: 1; min-height: 0; display: flex; flex-direction: column;
+        margin: 5px 10px; background: var(--card);
+        border: 1px solid var(--border); border-radius: var(--r);
+        box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    /* Single scroll wrapper — both axes scroll together so header stays aligned */
+    .tbl-scroll {
+        flex: 1; overflow: auto; min-height: 0;
+    }
+    .tbl-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .tbl-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+    .tbl-scroll::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 3px; }
+    .btbl {
+        width: 100%; border-collapse: collapse; font-size: 14px;
+        min-width: 1240px; table-layout: fixed;
+    }
+    .btbl thead th {
+        position: sticky; top: 0; z-index: 2;
+        background: var(--navy); color: #e8f0fe; padding: 10px 7px;
+        font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+        border: none; border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .btbl thead th:last-child { border-right: none; }
+    .btbl tbody td {
+        padding: 7px 6px; border-bottom: 1px solid var(--border-light);
+        border-right: 1px solid var(--border-light); vertical-align: middle;
+        font-size: 14px;
+    }
+    .btbl tbody td:last-child { border-right: none; }
+    .btbl tbody tr:hover td { background: #f0edf8; }
+    .btbl tbody tr:nth-child(even) td { background: #f7f5fb; }
+    .btbl tbody tr:nth-child(even):hover td { background: #f0edf8; }
+    .btbl tfoot td {
+        position: sticky; bottom: 0; z-index: 1;
+        background: #f1f5f9; font-weight: 700; font-size: 12px; padding: 5px 6px;
+        border-top: 2px solid var(--border); border-right: 1px solid var(--border-light);
+    }
+    .btbl tfoot td:last-child { border-right: none; }
+
+    /* Column widths */
+    .btbl th:nth-child(1), .btbl td:nth-child(1) { width: 50px; text-align: center; }
+    .btbl th:nth-child(2), .btbl td:nth-child(2) { width: 50px; text-align: center; }
+    .btbl th:nth-child(3), .btbl td:nth-child(3) { width: 240px; }
+    .btbl th:nth-child(4), .btbl td:nth-child(4) { width: 90px; }
+    .btbl th:nth-child(5), .btbl td:nth-child(5) { width: 100px; }
+    .btbl th:nth-child(6), .btbl td:nth-child(6) { width: 80px; }
+    .btbl th:nth-child(7), .btbl td:nth-child(7) { width: 80px; }
+    .btbl th:nth-child(8), .btbl td:nth-child(8) { width: 60px; }
+    .btbl th:nth-child(9), .btbl td:nth-child(9) { width: 60px; }
+    .btbl th:nth-child(10), .btbl td:nth-child(10) { width: 60px; }
+    .btbl th:nth-child(11), .btbl td:nth-child(11) { width: 90px; }
+    .btbl th:nth-child(12), .btbl td:nth-child(12) { width: 90px; }
+    .btbl th:nth-child(13), .btbl td:nth-child(13) { width: 90px; }
+    .btbl th:nth-child(14), .btbl td:nth-child(14) { width: 100px; }
+    .btbl th:nth-child(15), .btbl td:nth-child(15) { width: 90px; }
+
+    /* BOTTOM PANEL */
+    .bot-panel {
+        flex-shrink: 0; background: var(--card);
+        border-top: 2px solid var(--border-light); padding: 7px 14px;
+        box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+    }
+    .bot-inner { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .grp { display: flex; gap: 7px; align-items: flex-end; flex-wrap: wrap; }
+    .grp-pay { flex: 3; }
+    .grp-act { flex: 0 0 auto; }
+
+    /* PO / Advance banners */
+    .info-banner {
+        margin-bottom: 6px; padding: 5px 10px;
+        background: #eff6ff; border: 1px solid #bfdbfe;
+        border-radius: var(--r-sm); font-size: 12px; color: #1d4ed8;
+    }
+    .success-banner {
+        margin-bottom: 6px; padding: 5px 10px;
+        background: #f0fdf4; border: 1px solid #86efac;
+        border-radius: var(--r-sm); font-size: 12px; color: #15803d;
     }
 
-    /* Column Width Definitions */
-    .table-fixed-layout th:nth-child(1), .table-fixed-layout td:nth-child(1) { width: 50px; }
-    .table-fixed-layout th:nth-child(2), .table-fixed-layout td:nth-child(2) { width: 50px; }
-    .table-fixed-layout th:nth-child(3), .table-fixed-layout td:nth-child(3) { width: 240px; }
-    .table-fixed-layout th:nth-child(4), .table-fixed-layout td:nth-child(4) { width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .table-fixed-layout th:nth-child(5), .table-fixed-layout td:nth-child(5) { width: 100px; }
-    .table-fixed-layout th:nth-child(6), .table-fixed-layout td:nth-child(6) { width: 60px; }
-    .table-fixed-layout th:nth-child(7), .table-fixed-layout td:nth-child(7) { width: 80px; }
-    .table-fixed-layout th:nth-child(8), .table-fixed-layout td:nth-child(8) { width: 80px; }
-    .table-fixed-layout th:nth-child(9), .table-fixed-layout td:nth-child(9) { width: 60px; }
-    .table-fixed-layout th:nth-child(10), .table-fixed-layout td:nth-child(10) { width: 60px; }
-    .table-fixed-layout th:nth-child(11), .table-fixed-layout td:nth-child(11) { width: 90px; }
-    .table-fixed-layout th:nth-child(12), .table-fixed-layout td:nth-child(12) { width: 90px; }
-    .table-fixed-layout th:nth-child(13), .table-fixed-layout td:nth-child(13) { width: 90px; }
-    .table-fixed-layout th:nth-child(14), .table-fixed-layout td:nth-child(14) { width: 100px; }
-    .table-fixed-layout th:nth-child(15), .table-fixed-layout td:nth-child(15) { width: 90px; }
+    /* Mobile */
+    @media (max-width: 768px) {
+        .bw { height: 100svh; }
+        .top-panel { padding: 5px 8px 7px; }
+        .tp-row { gap: 5px; }
+        .tbl-panel { margin: 4px 6px; }
+        .bot-panel { padding: 5px 8px 82px; overflow-y: auto; max-height: 48vh; }
+        .bot-inner { flex-direction: column; gap: 5px; align-items: stretch; }
+        .grp-pay { flex: none; width: 100%; display: grid; grid-template-columns: repeat(2,1fr); gap: 5px; }
+        .grp-act {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+            background: var(--card); border-top: 2px solid var(--border-light);
+            box-shadow: 0 -3px 10px rgba(0,0,0,.12); padding: 6px 8px;
+            display: flex !important; gap: 5px;
+        }
+        .grp-act .bb { flex: 1; justify-content: center; }
+    }
+    @media (max-width: 480px) {
+        .tp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .grp-pay { grid-template-columns: repeat(2,1fr); }
+    }
 </style>
-<body style="height: 100vh; overflow: hidden;" onload="Load();loadPOItems()">
+<body onload="Load();loadPOItems()">
+<div class="bw">
 
-    <div class="container-fluid h-100 d-flex flex-column">
-        <!-- Navbar -->
+    <!-- NAVBAR -->
+    <div class="bw-nav">
         <%@ include file="/assets/navbar/navbar.jsp" %>
-        
-        <input type="hidden" id="_proAddRowCount" name="_proAddRowCount" value="0">
-        <input type="hidden" id="_proDelRowCount" name="_proDelRowCount" value="0">
-        <input type="hidden" id="poId" name="poId" value="<%= poId %>">
-        <input type="hidden" id="mode" name="mode" value="<%= mode %>">
-        <input type="hidden" id="advancePaid" name="advancePaid" value="<%= advancePaid %>">
-        <% if (mode.equals("from-po") && poHeader != null) { %>
-        <input type="hidden" id="supplierIdFromPO" value="<%= poHeader.get(10) %>">
+    </div>
+
+    <input type="hidden" id="_proAddRowCount" name="_proAddRowCount" value="0">
+    <input type="hidden" id="_proDelRowCount" name="_proDelRowCount" value="0">
+    <input type="hidden" id="poId" name="poId" value="<%= poId %>">
+    <input type="hidden" id="mode" name="mode" value="<%= mode %>">
+    <input type="hidden" id="advancePaid" name="advancePaid" value="<%= advancePaid %>">
+    <% if (mode.equals("from-po") && poHeader != null) { %>
+    <input type="hidden" id="supplierIdFromPO" value="<%= poHeader.get(10) %>">
+    <% } %>
+
+    <!-- TOP PANEL - Supplier Details -->
+    <div class="top-panel">
+        <% if (mode.equals("from-po")) { %>
+        <div class="info-banner">
+            <i class="fas fa-truck me-2"></i>
+            <strong>Receiving Goods from PO:</strong> <%= poHeader != null ? poHeader.get(0).toString() : "" %>
+        </div>
         <% } %>
-
-        <!-- Supplier Details (Top) -->
-        <div class="card flex-shrink-0 my-1">
-            <div class="card-body py-2">
-                <% if (mode.equals("from-po")) { %>
-                <div class="alert alert-info mb-2 py-1">
-                    <i class="fas fa-truck me-2"></i>
-                    <strong>Receiving Goods from PO:</strong> <%= poHeader != null ? poHeader.get(0).toString() : "" %>
-                </div>
-                <% } %>
-                <div class="row g-1">
-                    <div class="col-md-3">
-                        <div class="input-outline">
-                            <select class="form-select" name="supplier" id="supplier" onchange="setPaymentTypeBasedOnGst();">
-                                <option value="0">Select Supplier</option>
-                                <!-- Populated by JS -->
-                            </select>
-                            
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="input-outline">
-                            <input type="text" class="form-control" id="invoiceNo" name="invoiceNo">
-                            <label>Invoice No.</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="input-outline">
-                            <input type="date" class="form-control" id="invoiceDate" name="invoiceDate" value="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
-                            <label>Invoice Date</label>
-                        </div>
-                    </div>
-                </div>
+        <div class="tp-row">
+            <div class="fg" style="flex:2;min-width:180px;">
+                <span class="fg-lbl">Supplier</span>
+                <select class="fg-sel" name="supplier" id="supplier" onchange="setPaymentTypeBasedOnGst();">
+                    <option value="0">Select Supplier</option>
+                </select>
             </div>
-        </div>
-
-        <!-- Product Table (Middle - Flexible) -->
-        <div class="m-0 flex-grow-1 table-wrapper">
-            <table class="table table-bordered table-sm mb-0 table-fixed-layout">
-                <thead>
-                    <tr>
-                        <th>Add</th>
-                        <th>Del</th>
-                        <th>Item Name <button type="button" class="btn btn-success py-0 px-1 ms-1" style="font-size:0.68rem;line-height:1.4;" onclick="openAddProductModal()" title="Add New Product"><i class="fas fa-plus"></i></button></th>
-                        <th>Qty</th>
-                        <th>Cost</th>
-                        <th>MRP</th>
-                        <th>Disc%</th>
-                        <th>Tax%</th>
-                        <th>Free</th>
-                        <th>History</th>
-                        <th>Cost Tot</th>
-                        <th>MRP Tot</th>
-                        <th>Tax Tot</th>
-                        <th>Net Tot</th>
-                        <th>Unit Cost</th>
-                    </tr>
-                </thead>
-                <tbody id="productTable">
-                    <!-- Rows added by JS -->
-                </tbody>
-                <tfoot style="background-color: #f8f9fa;">
-                    <tr>
-                        <td colspan="10" class="text-end fw-bold pe-2">Summary Total:</td>
-                        <td id="sumCostTotal" class="fw-bold">0.00</td>
-                        <td id="sumMrpTotal" class="fw-bold">0.00</td>
-                        <td id="sumTaxTotal" class="fw-bold">0.00</td>
-                        <td id="sumNetTotal" class="fw-bold">0.00</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-
-        <!-- Payment Details (Bottom) -->
-        <div class="card flex-shrink-0 my-1">
-            <div class="card-body py-2">
-                <% if (mode.equals("from-po") && advancePaid > 0) { %>
-                <div class="alert alert-success mb-2 py-1">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Advance Paid:</strong> ₹<%= String.format("%.3f", advancePaid) %> | 
-                    <strong>Remaining:</strong> ₹<%= String.format("%.3f", advanceBalance) %>
-                </div>
-                <% } %>
-                <div class="row g-1">
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <select class="form-select" id="payType" name="payType">
-                                <option value="0">Select Payment Type</option>
-                                <!-- Populated by JS -->
-                            </select>
-                            
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <select class="form-select" id="bank" name="bank">
-                                <option value="0">Select Mode</option>
-                            </select>
-                           
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <input type="number" class="form-control bg-light" id="grandTotal" name="grandTotal" step="0.001" readonly value="0.00">
-                            <label>Total Amount</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <input type="number" class="form-control" id="paidAmount" name="paidAmount" step="0.001" value="0.00">
-                            <label>Paid Now</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <input type="number" class="form-control" id="extraDisc" name="extraDisc" step="0.001" value="0.00">
-                            <label>Extra Discount</label>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="input-outline">
-                            <input type="number" class="form-control bg-light" id="balanceAmount" name="balanceAmount" step="0.001" readonly value="0.00">
-                            <label>Balance</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="row g-1 mt-1">
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-outline-violet w-100 h-100" id="saveBtn" onclick="savePurchaseBill()">
-                            <i class="fas fa-save me-2"></i>Save
-                        </button>
-                    </div>
-                </div>
+            <div class="fg" style="flex:1.5;min-width:140px;">
+                <span class="fg-lbl">Invoice No.</span>
+                <input type="text" class="fg-inp" id="invoiceNo" name="invoiceNo">
+            </div>
+            <div class="fg" style="min-width:150px;">
+                <span class="fg-lbl">Invoice Date</span>
+                <input type="date" class="fg-inp" id="invoiceDate" name="invoiceDate" value="<%= new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()) %>">
             </div>
         </div>
     </div>
+
+    <!-- TABLE PANEL -->
+    <div class="tbl-panel">
+      <div class="tbl-scroll">
+        <table class="btbl">
+            <thead>
+                <tr>
+                    <th>Add</th>
+                    <th>Del</th>
+                    <th>Item Name <button type="button" onclick="openAddProductModal()" title="Add New Product" style="margin-left:7px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(255,255,255,0.18);color:#fff;font-size:13px;font-weight:700;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.35)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">+</button></th>
+                    <th>Qty</th>
+                    <th>Cost</th>
+                    <th>MRP</th>
+                    <th>Disc%</th>
+                    <th>Tax%</th>
+                    <th>Free</th>
+                    <th>History</th>
+                    <th>Cost Tot</th>
+                    <th>MRP Tot</th>
+                    <th>Tax Tot</th>
+                    <th>Net Tot</th>
+                    <th>Unit Cost</th>
+                </tr>
+            </thead>
+            <tbody id="productTable">
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="10" style="text-align:right;padding-right:8px;">Summary Total:</td>
+                    <td id="sumCostTotal">0.00</td>
+                    <td id="sumMrpTotal">0.00</td>
+                    <td id="sumTaxTotal">0.00</td>
+                    <td id="sumNetTotal">0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOTTOM PANEL - Payment -->
+    <div class="bot-panel">
+        <% if (mode.equals("from-po") && advancePaid > 0) { %>
+        <div class="success-banner">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Advance Paid:</strong> &#8377;<%= String.format("%.3f", advancePaid) %> &nbsp;|&nbsp;
+            <strong>Remaining:</strong> &#8377;<%= String.format("%.3f", advanceBalance) %>
+        </div>
+        <% } %>
+        <div class="bot-inner">
+            <div class="grp grp-pay">
+                <div class="fg" style="flex:1;min-width:140px;">
+                    <span class="fg-lbl">Payment Type</span>
+                    <select class="fg-sel" id="payType" name="payType">
+                        <option value="0">Select Payment Type</option>
+                    </select>
+                </div>
+                <div class="fg" style="flex:1;min-width:130px;">
+                    <span class="fg-lbl">Bank / Mode</span>
+                    <select class="fg-sel" id="bank" name="bank">
+                        <option value="0">Select Mode</option>
+                    </select>
+                </div>
+                <div class="fg" style="flex:1;min-width:120px;">
+                    <span class="fg-lbl">Total Amount</span>
+                    <input type="number" class="fg-inp" id="grandTotal" name="grandTotal" step="0.001" readonly value="0.00">
+                </div>
+                <div class="fg" style="flex:1;min-width:120px;">
+                    <span class="fg-lbl">Paid Now</span>
+                    <input type="number" class="fg-inp" id="paidAmount" name="paidAmount" step="0.001" value="0.00">
+                </div>
+                <div class="fg" style="flex:1;min-width:120px;">
+                    <span class="fg-lbl">Extra Discount</span>
+                    <input type="number" class="fg-inp" id="extraDisc" name="extraDisc" step="0.001" value="0.00">
+                </div>
+                <div class="fg" style="flex:1;min-width:110px;">
+                    <span class="fg-lbl">Balance</span>
+                    <input type="number" class="fg-inp" id="balanceAmount" name="balanceAmount" step="0.001" readonly value="0.00">
+                </div>
+            </div>
+            <div class="grp grp-act">
+                <button type="button" class="bb bb-navy" id="saveBtn" onclick="savePurchaseBill()">
+                    <i class="fas fa-save"></i> SAVE
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /bw -->
 
     <!-- Purchase History Modal -->
     <div class="modal fade" id="purchaseHistoryModal" tabindex="-1">
@@ -356,8 +548,8 @@
             var escapedName = itemData.name.replace(/"/g, '&quot;');
             
             $("#productTable").append("<tr id='_productTableRow_" + proRowCount + "'>"
-                + "<td class='text-center'><button type='button' class='btn btn-sm btn-success' id='_addProcRow_" + proRowCount + "' onclick='addProductRow();' disabled><i class='fas fa-plus'></i></button></td>"
-                + "<td class='text-center'><button type='button' class='btn btn-sm btn-danger' id='_delProcRow_" + proRowCount + "' onclick='deleteProductRow(this);'><i class='fas fa-trash'></i></button></td>"
+                + "<td class='text-center'><button type='button' class='tbl-icon-btn add' id='_addProcRow_" + proRowCount + "' onclick='addProductRow();' disabled title='Add row'><i class='fas fa-plus' style='font-size:11px;'></i></button></td>"
+                + "<td class='text-center'><button type='button' class='tbl-icon-btn del' id='_delProcRow_" + proRowCount + "' onclick='deleteProductRow(this);' title='Delete row'><i class='fas fa-times' style='font-size:12px;'></i></button></td>"
                 + '<td><input type="text" class="form-control form-control-sm" id="_productName_' + proRowCount + '" name="_productName_' + proRowCount + '" value="' + escapedName + '" readonly></td>'
                 + "<td><div class='d-flex flex-column'><div class='d-flex align-items-center gap-1'><input type='text' class='form-control form-control-sm' id='_totqty_" + proRowCount + "' name='_totqty_" + proRowCount + "' value='" + (((parseFloat(itemData.pack) || 0) * (parseFloat(itemData.qtyperpack) || 0)).toFixed(3)) + "' style='min-width:65px;' onkeyup='calculateRow(" + proRowCount + ");'><span class='text-muted small' id='_totunit_" + proRowCount + "'></span></div><small class='text-primary' id='_convtotqty_" + proRowCount + "'></small><input type='hidden' id='_pack_" + proRowCount + "' name='_pack_" + proRowCount + "' value='1'><input type='hidden' id='_qtyperpack_" + proRowCount + "' name='_qtyperpack_" + proRowCount + "' value='" + (((parseFloat(itemData.pack) || 0) * (parseFloat(itemData.qtyperpack) || 0)).toFixed(3)) + "'></div></td>"
                 + "<td><div class='d-flex flex-column'><input type='text' class='form-control form-control-sm' id='_cost_" + proRowCount + "' name='_cost_" + proRowCount + "' value='" + itemData.cost + "' onkeyup='calculateRow(" + proRowCount + ");'><small class='text-info' id='_costperconv_" + proRowCount + "'></small></div></td>"
@@ -365,7 +557,7 @@
                 + "<td><input type='text' class='form-control form-control-sm' id='_disc_" + proRowCount + "' name='_disc_" + proRowCount + "' value='" + itemData.disc + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
                 + "<td><input type='text' class='form-control form-control-sm' id='_tax_" + proRowCount + "' name='_tax_" + proRowCount + "' value='" + itemData.tax + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
                 + "<td><input type='text' class='form-control form-control-sm' id='_freeqty_" + proRowCount + "' name='_freeqty_" + proRowCount + "' value='" + itemData.free + "' onkeyup='calculateRow(" + proRowCount + ");'></td>"
-                + "<td class='text-center'><button type='button' class='btn btn-sm btn-info' id='_historyBtn_" + proRowCount + "' onclick='viewPurchaseHistory(" + proRowCount + ");'><i class='fas fa-history'></i></button></td>"
+                + "<td class='text-center'><button type='button' class='tbl-icon-btn hist' id='_historyBtn_" + proRowCount + "' onclick='viewPurchaseHistory(" + proRowCount + ");' title='Purchase history'><i class='fas fa-history' style='font-size:12px;'></i></button></td>"
                 + "<td><label id='_costtotal_" + proRowCount + "'>0.00</label></td>"
                 + "<td><label id='_mrptotal_" + proRowCount + "'>0.00</label></td>"
                 + "<td><label id='_taxtotal_" + proRowCount + "'>0.00</label></td>"
