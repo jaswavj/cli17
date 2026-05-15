@@ -92,12 +92,40 @@ for (int i = 0; i < vecPer.size(); i++) {
       <span>Billing</span>
     </a>
     <% } %>
-  
+<% if (permissions.contains(5)) { %>
+    <div class="sidebar-dropdown">
+      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#inventoryMenu">
+        <i class="fas fa-warehouse"></i>
+        <span>Inventory</span>
+        <i class="fas fa-chevron-down ms-auto"></i>
+      </a>
+      <div class="collapse sidebar-submenu" id="inventoryMenu">
+        <a href="<%=request.getContextPath()%>/product/master/supplier/page.jsp" class="sidebar-subitem">Supplier</a>
+        <a href="<%=request.getContextPath()%>/product/purchase/page.jsp" class="sidebar-subitem">Purchase Entry</a>
+        <a href="<%=request.getContextPath()%>/product/purchase/report/purchaseRegister/page.jsp" class="sidebar-subitem">Purchase Report</a>
+        <a href="<%=request.getContextPath()%>/product/purchase/purchaseReturn/page.jsp" class="sidebar-subitem">Purchase Return</a>
+        <a href="<%=request.getContextPath()%>/product/purchase/purchaseReturn/report.jsp" class="sidebar-subitem">Purchase Return Report</a>
+      </div>
+    </div>
+    <% } %>  
+  <% if (permissions.contains(10)) { %>
+    <div class="sidebar-dropdown">
+      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#chequeMenu">
+        <i class="fas fa-money-check-alt"></i>
+        <span>Credit Management</span>
+        <i class="fas fa-chevron-down ms-auto"></i>
+      </a>
+      <div class="collapse sidebar-submenu" id="chequeMenu">
+        <a href="<%=request.getContextPath()%>/billing/balanceCollection.jsp" class="sidebar-subitem">Balance Collection</a>
+        <a href="<%=request.getContextPath()%>/product/supplierPayment/page.jsp" class="sidebar-subitem">Supplier Payment</a>
+      </div>
+    </div>
+    <% } %>
 <% if (permissions.contains(2)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#productMenu">
         <i class="fas fa-box"></i>
-        <span>Configuration</span>
+        <span>Master</span>
         <i class="fas fa-chevron-down ms-auto"></i>
       </a>
       <div class="collapse sidebar-submenu" id="productMenu">
@@ -113,19 +141,18 @@ for (int i = 0; i < vecPer.size(); i++) {
       </div>
     </div>
     <% } %>
-<% if (permissions.contains(5)) { %>
+
+    <% if (permissions.contains(3)) { %>
     <div class="sidebar-dropdown">
-      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#inventoryMenu">
-        <i class="fas fa-warehouse"></i>
-        <span>Inventory</span>
+      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#stockReportMenu">
+        <i class="fas fa-chart-bar"></i>
+        <span>Stock Reports</span>
         <i class="fas fa-chevron-down ms-auto"></i>
       </a>
-      <div class="collapse sidebar-submenu" id="inventoryMenu">
-        <a href="<%=request.getContextPath()%>/product/master/supplier/page.jsp" class="sidebar-subitem">Supplier</a>
-        <a href="<%=request.getContextPath()%>/product/purchase/page.jsp" class="sidebar-subitem">Purchase Entry</a>
-        <a href="<%=request.getContextPath()%>/product/purchase/report/purchaseRegister/page.jsp" class="sidebar-subitem">Purchase Report</a>
-        <a href="<%=request.getContextPath()%>/product/purchase/purchaseReturn/page.jsp" class="sidebar-subitem">Purchase Return</a>
-        <a href="<%=request.getContextPath()%>/product/purchase/purchaseReturn/report.jsp" class="sidebar-subitem">Purchase Return Report</a>
+      <div class="collapse sidebar-submenu" id="stockReportMenu">
+        <a href="<%=request.getContextPath()%>/reports/currentStock/page1.jsp" class="sidebar-subitem">Current Stock</a>
+        <a href="<%=request.getContextPath()%>/reports/prodTransaction/page.jsp" class="sidebar-subitem"><%=head3%> Transaction</a>
+        <a href="<%=request.getContextPath()%>/reports/stockAdj/page.jsp" class="sidebar-subitem">Stock Adjustment</a>
       </div>
     </div>
     <% } %>
@@ -155,20 +182,7 @@ for (int i = 0; i < vecPer.size(); i++) {
   <div class="sidebar-menu">
     
 
-    <% if (permissions.contains(3)) { %>
-    <div class="sidebar-dropdown">
-      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#stockReportMenu">
-        <i class="fas fa-chart-bar"></i>
-        <span>Stock Reports</span>
-        <i class="fas fa-chevron-down ms-auto"></i>
-      </a>
-      <div class="collapse sidebar-submenu" id="stockReportMenu">
-        <a href="<%=request.getContextPath()%>/reports/currentStock/page1.jsp" class="sidebar-subitem">Current Stock</a>
-        <a href="<%=request.getContextPath()%>/reports/prodTransaction/page.jsp" class="sidebar-subitem"><%=head3%> Transaction</a>
-        <a href="<%=request.getContextPath()%>/reports/stockAdj/page.jsp" class="sidebar-subitem">Stock Adjustment</a>
-      </div>
-    </div>
-    <% } %>
+    
 <% if (permissions.contains(6)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#accountReportMenu">
@@ -244,34 +258,7 @@ for (int i = 0; i < vecPer.size(); i++) {
     </div>
     <% } %>
     
-    
 
-    
-
-    
-
-    
-
-    
-    <% if (permissions.contains(10)) { %>
-    <div class="sidebar-dropdown">
-      <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#chequeMenu">
-        <i class="fas fa-money-check-alt"></i>
-        <span>Credit Management</span>
-        <i class="fas fa-chevron-down ms-auto"></i>
-      </a>
-      <div class="collapse sidebar-submenu" id="chequeMenu">
-        <a href="<%=request.getContextPath()%>/billing/balanceCollection.jsp" class="sidebar-subitem">Balance Collection</a>
-        <a href="<%=request.getContextPath()%>/product/supplierPayment/page.jsp" class="sidebar-subitem">Supplier Payment</a>
-      </div>
-    </div>
-    <% } %>
-    
-
-    
-
-    
-    
     <% if (permissions.contains(4)) { %>
     <div class="sidebar-dropdown">
       <a href="#" class="sidebar-item" data-bs-toggle="collapse" data-bs-target="#adminMenu">
