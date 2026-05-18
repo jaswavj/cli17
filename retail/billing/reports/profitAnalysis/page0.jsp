@@ -2,6 +2,7 @@
 <%@ page language="java" import= "java.util.*"%>
 <%@ page language="java" import= "java.util.*,java.text.*" %>
 <jsp:useBean id="bill" class="billing.billingBean" />
+<jsp:useBean id="prod" class="product.productBean" />
 <%
 String contextPath = request.getContextPath();
     String fromDate = request.getParameter("fromDate");  
@@ -42,6 +43,20 @@ String contextPath = request.getContextPath();
             totalProfitSum += profit;
         }
         double overallProfitPercent = (totalCostSum > 0) ? (totalProfitSum / totalCostSum) * 100 : 0;
+
+        // Fetch expenses for the same date range
+        double totalExpense = 0.0;
+        Vector expVec = new Vector();
+        try {
+            expVec = prod.getExpenseReport(fromDate, toDate, 0);
+            for (int ei = 0; ei < expVec.size(); ei++) {
+                Vector expRow = (Vector) expVec.get(ei);
+                totalExpense += (Double) expRow.get(4);
+            }
+        } catch (Exception ex) {
+            System.err.println("Error loading expenses: " + ex.getMessage());
+        }
+        double netProfit = totalProfitSum - totalExpense;
 %>
 
 <!-- Summary Cards -->
@@ -75,6 +90,27 @@ String contextPath = request.getContextPath();
             <div class="card-body">
                 <h6 class="text-muted">Profit Margin</h6>
                 <h4 class="<%= overallProfitPercent >= 0 ? "text-success" : "text-danger" %>"><%= String.format("%.1f", overallProfitPercent) %>%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h6 class="text-muted">Total Expenses</h6>
+                <h4 class="text-danger">&#8377; <%= String.format("%,.2f", totalExpense) %></h4>
+                <small class="text-muted"><%= expVec.size() %> expense entries in period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card <%= netProfit >= 0 ? "border-success" : "border-danger" %>">
+            <div class="card-body">
+                <h6 class="text-muted">Net Profit (After Expenses)</h6>
+                <h4 class="<%= netProfit >= 0 ? "text-success" : "text-danger" %>">&#8377; <%= String.format("%,.2f", netProfit) %></h4>
+                <small class="text-muted">Gross Profit &minus; Expenses</small>
             </div>
         </div>
     </div>
@@ -142,7 +178,53 @@ String contextPath = request.getContextPath();
 </table>
 </div>
 
-<!-- Summary Cards -->
+<!-- Expenses Detail -->
+<% if (expVec.size() > 0) { %>
+<h5 class="mt-4 mb-3 fw-bold">Expense Details</h5>
+<div class="table-responsive">
+<table id="expenseTable" class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0; font-size: 12px;">
+    <thead style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);">
+        <tr>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">#</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Date</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Type</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Content</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">Description</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem; text-align: right;">Amount</th>
+            <th style="padding: 0.4rem; font-weight: 600; color: #4a5568; border: none; font-size: 0.85rem;">By</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% for (int ei = 0; ei < expVec.size(); ei++) {
+            Vector expRow = (Vector) expVec.get(ei);
+            String expDate  = expRow.get(0) != null ? expRow.get(0).toString() : "";
+            String expType  = expRow.get(1) != null ? expRow.get(1).toString() : "";
+            String expContent = expRow.get(2) != null ? expRow.get(2).toString() : "";
+            String expDesc  = expRow.get(3) != null ? expRow.get(3).toString() : "";
+            double expAmt   = (Double) expRow.get(4);
+            String expUser  = expRow.get(5) != null ? expRow.get(5).toString() : "";
+        %>
+        <tr>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= ei + 1 %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= expDate %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= expType %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= expContent %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= expDesc %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0; text-align: right; color: #ef4444; font-weight: 600;">&#8377; <%= String.format("%,.2f", expAmt) %></td>
+            <td style="padding: 0.5rem; border: none; border-bottom: 1px solid #e2e8f0;"><%= expUser %></td>
+        </tr>
+        <% } %>
+    </tbody>
+    <tfoot style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); font-weight: 700;">
+        <tr>
+            <td colspan="5" style="padding: 0.75rem; text-align: right; border: none; font-size: 0.9rem;">Total Expenses:</td>
+            <td style="padding: 0.75rem; text-align: right; border: none; font-size: 0.9rem; color: #ef4444;">&#8377; <%= String.format("%,.2f", totalExpense) %></td>
+            <td style="border: none;"></td>
+        </tr>
+    </tfoot>
+</table>
+</div>
+<% } %>
 
 </div>
 
