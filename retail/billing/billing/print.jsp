@@ -82,6 +82,7 @@ double totalIGST = 0;
 double totalGSTAmount = 0;
 double totalQty = 0;
 double subTotalBeforeDiscount = 0;
+double totalCourierCharge = 0;
 
 // Map to store GST-wise totals
 Map<Integer, Double> gstWiseTaxable = new HashMap<Integer, Double>();
@@ -94,6 +95,7 @@ for(Vector<Object> prod : billDetails){
     double itemPrice = Double.parseDouble(prod.get(2).toString());
     int gstPer = Integer.parseInt(prod.get(5).toString());
     double qty = Double.parseDouble(prod.get(1).toString());
+    double itemCourier = (prod.size() > 10 && prod.get(10) != null) ? Double.parseDouble(prod.get(10).toString()) : 0;
     
     // Calculate taxable amount (amount before GST)
     double taxableAmount = itemTotal / (1 + (gstPer / 100.0));
@@ -109,6 +111,7 @@ for(Vector<Object> prod : billDetails){
     totalSGST += sgst;
     totalGSTAmount += gstAmount;
     totalQty += qty;
+    totalCourierCharge += itemCourier;
     
     // Group by GST rate
     gstWiseTaxable.put(gstPer, gstWiseTaxable.getOrDefault(gstPer, 0.0) + taxableAmount);
@@ -120,6 +123,11 @@ for(Vector<Object> prod : billDetails){
 subTotalBeforeDiscount = totalAmount + totalDiscount;
     
 finalPaid = totalAmount - extradisc;
+
+// Fetch due collection records for this bill
+int billId = bill.getBillId(billNo);
+Vector<Vector<Object>> dueCollections = bill.getDuePaidList(billId);
+Vector initialPayment = bill.getInitialBillPayment(billNo);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -127,6 +135,11 @@ finalPaid = totalAmount - extradisc;
     <meta charset="UTF-8">
     <title>Tax Invoice</title>
     <style>
+        :root {
+            --theme-primary: #0b7a44;
+            --theme-border: #1e5a3c;
+            --theme-light: #f3f3f3;
+        }
         @page { size: A4; margin: 5mm; }
         body {
             font-family: Arial, sans-serif;
@@ -137,7 +150,7 @@ finalPaid = totalAmount - extradisc;
         }
         .container {
             width: calc(100% - 20px);
-            border: 2px solid #2c3e50;
+            border: 2px solid var(--theme-border);
             margin: 0 auto;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             background: white;
@@ -147,7 +160,7 @@ finalPaid = totalAmount - extradisc;
             font-weight: bold;
             font-size: 16px;
             margin-bottom: 8px;
-            color: #2c3e50;
+            color: var(--theme-primary);
             text-transform: uppercase;
             letter-spacing: 2px;
         }
@@ -170,8 +183,8 @@ finalPaid = totalAmount - extradisc;
         /* Header Section */
         .company-header {
             display: flex;
-            border-bottom: 2px solid #2c3e50;
-            background: #f8f9fa;
+            border-bottom: 2px solid var(--theme-border);
+            background: var(--theme-light);
             padding: 8px;
             align-items: center;
         }
@@ -216,12 +229,12 @@ finalPaid = totalAmount - extradisc;
         
         /* Section Headers */
         .purple-header {
-            background: #e9ecef;
+            background: var(--theme-light);
             color: #000;
             padding: 6px 10px;
             font-weight: bold;
-            border-bottom: 1px solid #2c3e50;
-            border-right: 1px solid #2c3e50;
+            border-bottom: 1px solid var(--theme-border);
+            border-right: 1px solid var(--theme-border);
             font-size: 11px;
             letter-spacing: 0.5px;
         }
@@ -229,11 +242,11 @@ finalPaid = totalAmount - extradisc;
         /* Bill To & Invoice Details */
         .bill-info-row {
             display: flex;
-            border-bottom: 2px solid #2c3e50;
+            border-bottom: 2px solid var(--theme-border);
         }
         .bill-to-box {
             width: 50%;
-            border-right: 2px solid #2c3e50;
+            border-right: 2px solid var(--theme-border);
         }
         .invoice-details-box {
             width: 50%;
@@ -251,14 +264,14 @@ finalPaid = totalAmount - extradisc;
             border-collapse: collapse;
         }
         .items-table th {
-            background-color: #e9ecef;
+            background-color: var(--theme-light);
             color: #000;
             border-left: 1px solid #000;
             border-right: 1px solid #000;
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
             padding: 4px 2px;
-            font-size: 10px;
+            font-size: 12px;
             text-align: center;
             font-weight: bold;
         }
@@ -274,7 +287,7 @@ finalPaid = totalAmount - extradisc;
             border-top: none;
             border-bottom: none;
             padding: 3px 4px;
-            font-size: 11px;
+            font-size: 12px;
             vertical-align: middle;
         }
         .items-table tbody {
@@ -298,16 +311,17 @@ finalPaid = totalAmount - extradisc;
         .total-row td {
             border-top: 1px solid #000 !important;
             border-bottom: 1px solid #000 !important;
+            font-size: 12px;
         }
         
         /* Tax & Amounts Section */
         .tax-amounts-row {
             display: flex;
-            border-bottom: 1px solid #2c3e50;
+            border-bottom: 1px solid var(--theme-border);
         }
         .tax-box {
             width: 50%;
-            border-right: 1px solid #2c3e50;
+            border-right: 1px solid var(--theme-border);
         }
         .amounts-box {
             width: 50%;
@@ -332,25 +346,52 @@ finalPaid = totalAmount - extradisc;
             font-weight: bold;
             border-bottom: none;
             font-size: 13px;
-            background: #e8ebf0;
+            background: var(--theme-light);
             padding: 8px 10px;
         }
         
         /* Footer Info */
         .footer-row {
             display: flex;
-            border-bottom: 1px solid #2c3e50;
+            border-bottom: 1px solid var(--theme-border);
+        }
+        .payment-summary-section {
+            border-bottom: 1px solid var(--theme-border);
+            padding: 6px 8px;
+        }
+        .payment-summary-section .ps-title {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 4px;
+            background: var(--theme-light);
+            padding: 4px 8px;
+            border-bottom: 1px solid var(--theme-border);
+        }
+        .payment-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        .payment-summary-table th {
+            background: #f1f3f5;
+            border: 1px solid #ccc;
+            padding: 3px 6px;
+            text-align: center;
+        }
+        .payment-summary-table td {
+            border: 1px solid #ccc;
+            padding: 3px 6px;
         }
         .words-box {
             width: 50%;
-            border-right: 1px solid #2c3e50;
+            border-right: 1px solid var(--theme-border);
         }
         .rightBorder {
-            border-right: 1px solid #2c3e50;
+            border-right: 1px solid var(--theme-border);
         }
         .words-boxWord {
             width: 100%;
-            
+            border-bottom: 1px solid var(--theme-border);
         }
         .desc-box {
             width: 50%;
@@ -365,6 +406,9 @@ finalPaid = totalAmount - extradisc;
             font-size: 11px;
             font-weight: 600;
         }
+        .amount-words-content {
+            border-bottom: 1px solid var(--theme-border);
+        }
         
         
         /* Terms & Signature */
@@ -373,7 +417,7 @@ finalPaid = totalAmount - extradisc;
         }
         .terms-box {
             width: 50%;
-            border-right: 1px solid #2c3e50;
+            border-right: 1px solid var(--theme-border);
             font-size: 9px;
         }
         .sign-box {
@@ -387,7 +431,7 @@ finalPaid = totalAmount - extradisc;
         }
         .sign-box .text-center {
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--theme-primary);
             padding-top: 10px;
             display: inline-block;
             width: 200px;
@@ -419,7 +463,7 @@ finalPaid = totalAmount - extradisc;
         .qr-code-box img {
             width: 100px;
             height: 100px;
-            border: 2px solid #5b21b6;
+            border: 2px solid var(--theme-primary);
             border-radius: 8px;
             padding: 3px;
         }
@@ -564,14 +608,10 @@ finalPaid = totalAmount - extradisc;
         <thead>
             <tr>
                 <th style="width: 5%;">S.No</th>
-                <th style="width: 30%;">Item name</th>
-                <th style="width: 8%;">HSN/SAC</th>
-                <th style="width: 10%;">price/Unit</th>
-                <th style="width: 5%;">Qty</th>
-                <th style="width: 8%;">Taxable</th>
-                <th style="width: 10%;">CGST</th>
-                <th style="width: 10%;">SGST</th>
-                <th style="width: 14%;">Amount</th>
+                <th style="width: 58%;">Item name</th>
+                <th style="width: 12%;">price/Unit</th>
+                <th style="width: 10%;">Qty</th>
+                <th style="width: 15%;">Amount</th>
             </tr>
         </thead>
         <tbody>
@@ -580,9 +620,7 @@ finalPaid = totalAmount - extradisc;
             for(Vector<Object> prod : billDetails){
                 double itemTotal = Double.parseDouble(prod.get(4).toString());
                 double itemPrice = Double.parseDouble(prod.get(2).toString());
-                int gstPer = Integer.parseInt(prod.get(5).toString());
                 double qty = Double.parseDouble(prod.get(1).toString());
-                
                 String category = "";
                 if(prod.size() > 6 && prod.get(6) != null){
                     category = prod.get(6).toString();
@@ -590,33 +628,19 @@ finalPaid = totalAmount - extradisc;
                 String productName = prod.get(0).toString();
                 String displayName = (category.isEmpty()) ? productName : category + " - " + productName;
                 
-                String hsnCode = "";
-                if(prod.size() > 7 && prod.get(7) != null){
-                    hsnCode = prod.get(7).toString();
-                }
-                
                 String unitName = "";
                 if(prod.size() > 8 && prod.get(8) != null){
                     unitName = prod.get(8).toString();
                 }
-                
-                double taxableAmount = itemTotal / (1 + (gstPer / 100.0));
-                double gstAmount = itemTotal - taxableAmount;
-                double cgst = gstAmount / 2;
-                double sgst = gstAmount / 2;
             %>
             <tr class="item-row">
                 <td class="text-center" style="width: 5%;"><%= count++ %></td>
-                <td style="width: 30%;">
+                <td style="width: 58%;">
                     <div class="font-bold"><%= displayName %></div>
                 </td>
-                <td class="text-center" style="width: 8%;"><%= hsnCode %></td>
-                <td class="text-right" style="width: 10%;"><%= df.format(itemPrice) %></td>
-                <td class="text-center" style="width: 5%;"><%= qty %><% if(unitName != null && !unitName.trim().isEmpty()) { %> <%= unitName %><% } %></td>
-                <td class="text-right" style="width: 8%;"><%= df.format(taxableAmount) %></td>
-                <td class="text-right" style="width: 10%;"><%= df.format(cgst) %></td>
-                <td class="text-right" style="width: 10%;"><%= df.format(sgst) %></td>
-                <td class="text-right" style="width: 14%;"><%= df.format(itemTotal) %></td>
+                <td class="text-right" style="width: 12%;"><%= df.format(itemPrice) %></td>
+                <td class="text-center" style="width: 10%;"><%= qty %><% if(unitName != null && !unitName.trim().isEmpty()) { %> <%= unitName %><% } %></td>
+                <td class="text-right" style="width: 15%;"><%= df.format(itemTotal) %></td>
             </tr>
             <% } %>
             
@@ -629,25 +653,18 @@ finalPaid = totalAmount - extradisc;
             %>
             <tr class="empty-filler-row">
                 <td class="text-center" style="width: 5%; height: 25px;">&nbsp;</td>
-                <td style="width: 30%;">&nbsp;</td>
-                <td class="text-center" style="width: 8%;">&nbsp;</td>
-                <td class="text-right" style="width: 10%;">&nbsp;</td>
-                <td class="text-center" style="width: 5%;">&nbsp;</td>
-                <td class="text-right" style="width: 10%;">&nbsp;</td>
-                <td class="text-right" style="width: 10%;">&nbsp;</td>
-                <td class="text-right" style="width: 10%;">&nbsp;</td>
-                <td class="text-right" style="width: 11%;">&nbsp;</td>
+                <td style="width: 58%;">&nbsp;</td>
+                <td class="text-right" style="width: 12%;">&nbsp;</td>
+                <td class="text-center" style="width: 10%;">&nbsp;</td>
+                <td class="text-right" style="width: 15%;">&nbsp;</td>
             </tr>
             <% } %>
         </tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="4" class="text-right" style="width: 55%;">Total</td>
-                <td class="text-center" style="width: 8%;"><%= totalQty %></td>
-                <td class="text-right" style="width: 12%;"> <%= df.format(totalTaxableAmount) %></td>
-                <td class="text-right" style="width: 8%;"> <%= df.format(totalCGST) %></td>
-                <td class="text-right" style="width: 8%;"> <%= df.format(totalSGST) %></td>
-                <td class="text-right" style="width: 9%;"> <%= df.format(totalAmount) %></td>
+                <td colspan="3" class="text-right" style="width: 75%;">Total</td>
+                <td class="text-center" style="width: 10%;"><%= totalQty %></td>
+                <td class="text-right" style="width: 15%;"> <%= df.format(totalAmount) %></td>
             </tr>
         </tfoot>
     </table>
@@ -655,28 +672,79 @@ finalPaid = totalAmount - extradisc;
     <!-- Tax & Amounts -->
     <div class="tax-amounts-row">
         <div class="tax-box">
-            <div class="tax-row border-bottom">
-                <div>Tax details</div>
-                <div>
+            <%
+            boolean hasInitialPay = initialPayment != null && initialPayment.size() >= 5;
+            double ipCash = hasInitialPay && initialPayment.get(1) != null ? Double.parseDouble(initialPayment.get(1).toString()) : 0;
+            double ipBank = hasInitialPay && initialPayment.get(2) != null ? Double.parseDouble(initialPayment.get(2).toString()) : 0;
+            boolean showSummary = hasInitialPay || (dueCollections != null && dueCollections.size() > 0);
+            %>
+            <% if (showSummary) { %>
+            <div class="payment-summary-section">
+                <div class="ps-title">Payment Summary</div>
+                <table class="payment-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Mode</th>
+                            <th>Method</th>
+                            <th style="text-align:right;">Paid (₹)</th>
+                            <th style="text-align:right;">Balance (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <% if (hasInitialPay) {
+                        String ipDate    = initialPayment.get(0) != null ? initialPayment.get(0).toString() : "-";
+                        String ipPayType = initialPayment.get(3) != null ? initialPayment.get(3).toString() : "-";
+                        String ipBalance = initialPayment.get(4) != null ? initialPayment.get(4).toString() : "0";
+                        if (ipCash > 0) { %>
+                    <tr>
+                        <td class="text-center"><%= ipDate %></td>
+                        <td class="text-center">Cash</td>
+                        <td class="text-center">-</td>
+                        <td class="text-right"><%= df.format(ipCash) %></td>
+                        <td class="text-right"><%= df.format(Double.parseDouble(ipBalance)) %></td>
+                    </tr>
+                    <% } if (ipBank > 0) { %>
+                    <tr>
+                        <td class="text-center"><%= ipDate %></td>
+                        <td class="text-center">Bank</td>
+                        <td class="text-center"><%= ipPayType %></td>
+                        <td class="text-right"><%= df.format(ipBank) %></td>
+                        <td class="text-right"><%= df.format(Double.parseDouble(ipBalance)) %></td>
+                    </tr>
+                    <% } if (ipCash == 0 && ipBank == 0) { %>
+                    <tr>
+                        <td class="text-center"><%= ipDate %></td>
+                        <td class="text-center">-</td>
+                        <td class="text-center">-</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right"><%= df.format(Double.parseDouble(ipBalance)) %></td>
+                    </tr>
+                    <% } } %>
+                    <%
+                    if (dueCollections != null) {
+                        for (Vector<Object> dc : dueCollections) {
+                            String dcDate      = dc.get(6) != null ? dc.get(6).toString() : "-";
+                            String dcPaid      = dc.get(2) != null ? dc.get(2).toString() : "0";
+                            String dcBalance   = dc.get(3) != null ? dc.get(3).toString() : "0";
+                            String dcMode      = dc.get(4) != null ? dc.get(4).toString() : "-";
+                            String dcBank      = dc.get(5) != null ? dc.get(5).toString() : "-";
+                    %>
+                    <tr>
+                        <td class="text-center"><%= dcDate %></td>
+                        <td class="text-center"><%= dcMode %></td>
+                        <td class="text-center"><%= dcBank %></td>
+                        <td class="text-right"><%= df.format(Double.parseDouble(dcPaid)) %></td>
+                        <td class="text-right"><%= df.format(Double.parseDouble(dcBalance)) %></td>
+                    </tr>
                     <% 
-                    for(Integer rate : gstWiseTaxable.keySet()) {
-                        out.print(rate + ".0%");
+                        }
                     }
                     %>
-                </div>
+                    </tbody>
+                </table>
             </div>
-            <div class="tax-row">
-                <div>CGST</div>
-                <div>₹ <%= df.format(totalCGST) %></div>
-            </div>
-            <div class="tax-row">
-                <div>SGST</div>
-                <div>₹ <%= df.format(totalSGST) %></div>
-            </div>
-            <div class="tax-row">
-                <div>IGST</div>
-                <div>₹ <%= df.format(totalIGST) %></div>
-            </div>
+            <% } %>
         </div>
         <div class="amounts-box">
             <div class="purple-header">Amounts</div>
@@ -696,42 +764,67 @@ finalPaid = totalAmount - extradisc;
                 <div>- ₹ <%= df.format(extradisc) %></div>
             </div>
             <% } %>
+
+            <%
+            double dueTotalPaid = 0;
+            double currentBalance = balance;
+            if (dueCollections != null) {
+                for (Vector<Object> dc : dueCollections) {
+                    if (dc.get(2) != null) dueTotalPaid += Double.parseDouble(dc.get(2).toString());
+                }
+                if (!dueCollections.isEmpty()) {
+                    Vector<Object> lastDc = dueCollections.get(dueCollections.size() - 1);
+                    if (lastDc.get(3) != null) currentBalance = Double.parseDouble(lastDc.get(3).toString());
+                }
+            }
+            double totalPaidAll = paid + dueTotalPaid;
+            %>
             <div class="amount-row total">
                 <div>Total</div>
                 <div>₹ <%= df.format(finalPaid) %></div>
             </div>
             <div class="amount-row">
                 <div>Paid</div>
-                <div>₹ <%= df.format(paid) %></div>
+                <div>₹ <%= df.format(totalPaidAll) %></div>
             </div>
             <div class="amount-row">
                 <div>Balance</div>
-                <div>₹ <%= df.format(balance) %></div>
+                <div>₹ <%= df.format(currentBalance) %></div>
             </div>
         </div>
     </div>
 
     <!-- Words & Description -->
-    <div class="footer-row">
+    <div class="footer-row" style="border-bottom: none;">
         <div class="words-boxWord">
-            <div class="footer-content">
+            <div class="footer-content amount-words-content">
                 Amount In Words : <%= numPaid %> 
             </div>
         </div>
         
     </div>
-    <div class="footer-row">
+    <div class="footer-row" style="border-bottom: none;">
         
         <div class="desc-box">
-            <div class="purple-header">Declaration</div>
+            <div class="purple-header">Terms & Conditions</div>
             <div  style="text-align: left; align-items: flex-start;" class="rightBorder">
-                Your Declaration Here.<br><br><br><br><br><br><br><br><br><br>
+                <ul class="terms-list">
+                    <li>Please check size, color, and quality before billing..</li>
+                    <li>No refund Wholesale products.</li>
+                    <li>No refund for offer products</li>
+                    <li>Damaged or used products will not be accepted for exchange</li>
+                    <li>Please pay balance on time</li>
+                    <li>Exchange allowed within 3 days only with bill.</li>
+                    <li>Damaged or used products will not be accepted for exchange.</li>
+                    <li>Thank you for shopping with us.</li>
+                    
+                </ul>
             </div>
         </div>
-        <div class="words-box">
+        <div class="words-box" style="border-right: none;">
             
             <% if (companyBankDetails != null && !companyBankDetails.trim().isEmpty()) { %>
-            <div class="purple-header">Bank Details for Payment</div>
+            <div class="purple-header" style="border-right: none;">Bank Details for Payment</div>
             <div class="footer-content" style="text-align: left; align-items: flex-start; justify-content: flex-start; padding: 0;">
                 <div class="bank-qr-container">
                     <div class="bank-details-text">
@@ -756,22 +849,7 @@ finalPaid = totalAmount - extradisc;
         </div>
     </div>
 
-    <div class="footer-row">
-        <div class="desc-box">
-            <div class="purple-header">Payment Terms</div>
-            <div  style="text-align: left; align-items: flex-start;" class="rightBorder">
-                60 days credit from the date of invoice.<br><br><br><br><br><br><br><br><br>
-            </div>
-            
-        </div>
-        <div class="desc-box">
-            
-            <div class="footer-content" style="text-align: left; align-items: flex-start;">
-                <%= companyName %>
-                <br><br><br><br><br><br><br><br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Authorized Signatory
-            </div>
-        </div>
-    </div>
+
 
 </div>
 

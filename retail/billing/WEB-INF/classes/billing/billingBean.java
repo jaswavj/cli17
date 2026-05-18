@@ -6037,5 +6037,33 @@ public void useExchangePoint(int customerId, int billId, double pointsUsed, int 
         if (con != null) try { con.close(); } catch (Exception e) { ; }
     }
 }
-
+public Vector getInitialBillPayment(String billNo) throws Exception {
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Vector row = new Vector();
+    try {
+        con = util.DBConnectionManager.getConnectionFromPool();
+        String sql = "SELECT DATE_FORMAT(a.date,'%d-%m-%Y'), b.cash, b.bank, "
+            + "CASE WHEN b.paymentType=0 THEN '-' WHEN b.paymentType=1 THEN 'UPI' WHEN b.paymentType=2 THEN 'DEBIT CARD' "
+            + "WHEN b.paymentType=3 THEN 'CREDIT CARD' WHEN b.paymentType=4 THEN 'NEFT' WHEN b.paymentType=5 THEN 'WALLET' ELSE '-' END AS payTypeName, "
+            + "a.balance "
+            + "FROM prod_bill a JOIN prod_bill_payment b ON b.bill_id=a.id WHERE a.bill_display=?";
+        ps = con.prepareStatement(sql);
+        ps.setString(1, billNo);
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            row.addElement(rs.getString(1)); // 0 date
+            row.addElement(rs.getString(2)); // 1 cash
+            row.addElement(rs.getString(3)); // 2 bank
+            row.addElement(rs.getString(4)); // 3 paymentTypeName
+            row.addElement(rs.getString(5)); // 4 balance
+        }
+    } finally {
+        if (rs != null) try { rs.close(); } catch (Exception e) {}
+        if (ps != null) try { ps.close(); } catch (Exception e) {}
+        if (con != null) try { con.close(); } catch (Exception e) {}
+    }
+    return row;
+}
 }
