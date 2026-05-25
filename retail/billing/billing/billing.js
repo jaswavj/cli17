@@ -696,7 +696,15 @@ function saveBill() {
     // Get selected price category (default to retailer since we removed the buttons)
     const priceCategory = 3;
 
-    if (customerName === "") customerName = "-";
+    // Validate required fields
+    if (customerName === "") {
+        document.getElementById("customerName").style.borderColor = "#dc2626";
+        document.getElementById("customerName").focus();
+        alert("Customer name is required.");
+        return;
+    }
+    document.getElementById("customerName").style.borderColor = "";
+
     if (customerPhn === "") customerPhn = "-";
 
     // Get totals

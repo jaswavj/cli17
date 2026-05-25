@@ -111,10 +111,14 @@ String type = request.getParameter("type"); // success / warning / danger / info
                                 </select>
                             </div>
                             <div class="col-md-12">
-                                <label style="font-size: 0.85rem;"><%=head3%> Name <span style="color:red">*</span></label><input type="text" name="productName" class="form-control" placeholder="" style="padding: 7px 10px; font-size: 0.9rem;" required>
+                                <label style="font-size: 0.85rem;"><%=head3%> Name <span style="color:red">*</span></label>
+                                <input type="text" id="productNameInput" name="productName" class="form-control" placeholder="" style="padding: 7px 10px; font-size: 0.9rem;" required autocomplete="off">
+                                <div id="productNameError" class="text-danger" style="font-size:0.8rem;display:none;"><i class="fas fa-exclamation-circle me-1"></i>Product name already exists!</div>
                             </div>
                             <div class="col-md-6 ">
-                                <label style="font-size: 0.85rem;"><%=head3%> Code <span style="color:red">*</span></label><input type="text" name="productCode" class="form-control" placeholder="" style="padding: 7px 10px; font-size: 0.9rem;" >
+                                <label style="font-size: 0.85rem;"><%=head3%> Code <span style="color:red">*</span></label>
+                                <input type="text" id="productCodeInput" name="productCode" class="form-control" placeholder="" style="padding: 7px 10px; font-size: 0.9rem;" autocomplete="off">
+                                <div id="productCodeError" class="text-danger" style="font-size:0.8rem;display:none;"><i class="fas fa-exclamation-circle me-1"></i>Product code already exists!</div>
                             </div>
                             <div class="col-md-6 ">
                                 <label style="font-size: 0.85rem;">HSN Code</label><input type="text" name="hsn" class="form-control" placeholder=" " style="padding: 7px 10px; font-size: 0.9rem;">
@@ -582,6 +586,13 @@ String type = request.getParameter("type"); // success / warning / danger / info
         document.getElementById('editProductId').value = product.productId;
         document.getElementById('productForm').action = 'edit1.jsp';
 
+        // Clear any duplicate error state
+        document.getElementById('productNameError').style.display = 'none';
+        document.getElementById('productCodeError').style.display = 'none';
+        document.getElementById('productNameInput').style.borderColor = '';
+        document.getElementById('productCodeInput').style.borderColor = '';
+        document.getElementById('submitBtn').style.display = '';
+
         // Set form field values
         const form = document.getElementById('productForm');
         form.querySelector('[name="productName"]').value = product.productName || '';
@@ -657,6 +668,13 @@ String type = request.getParameter("type"); // success / warning / danger / info
         document.getElementById('productForm').action = 'product1.jsp';
         document.getElementById('productForm').reset();
 
+        // Clear duplicate error state
+        document.getElementById('productNameError').style.display = 'none';
+        document.getElementById('productCodeError').style.display = 'none';
+        document.getElementById('productNameInput').style.borderColor = '';
+        document.getElementById('productCodeInput').style.borderColor = '';
+        document.getElementById('submitBtn').style.display = '';
+
         // Re-enable stock
         const stockInput = document.querySelector('[name="stock"]');
         stockInput.disabled = false;
@@ -705,6 +723,76 @@ String type = request.getParameter("type"); // success / warning / danger / info
         updateStockConversionNote();
         updateConvertedPriceNotes();
     }
+
+    // ── Duplicate check ──────────────────────────────────────────
+    var _dupCheckTimer = null;
+
+    function checkProductDuplicate(field) {
+        clearTimeout(_dupCheckTimer);
+        _dupCheckTimer = setTimeout(function() {
+            var name      = document.getElementById('productNameInput').value.trim();
+            var code      = document.getElementById('productCodeInput').value.trim();
+            var excludeId = document.getElementById('editProductId').value || '0';
+
+            var params = 'excludeId=' + encodeURIComponent(excludeId);
+            if (field === 'name' && name)  params += '&name='  + encodeURIComponent(name);
+            if (field === 'code' && code)  params += '&code='  + encodeURIComponent(code);
+            if (!name && !code) return;
+
+            fetch(contextPath + '/product/master/product/checkDuplicate.jsp?' + params)
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    var hasError = false;
+
+                    var nameErr = document.getElementById('productNameError');
+                    var nameInp = document.getElementById('productNameInput');
+                    if (field === 'name') {
+                        if (res.nameDuplicate) {
+                            nameErr.style.display = 'block';
+                            nameInp.style.borderColor = '#dc2626';
+                            hasError = true;
+                        } else {
+                            nameErr.style.display = 'none';
+                            nameInp.style.borderColor = '';
+                        }
+                    }
+
+                    var codeErr = document.getElementById('productCodeError');
+                    var codeInp = document.getElementById('productCodeInput');
+                    if (field === 'code') {
+                        if (res.codeDuplicate) {
+                            codeErr.style.display = 'block';
+                            codeInp.style.borderColor = '#dc2626';
+                            hasError = true;
+                        } else {
+                            codeErr.style.display = 'none';
+                            codeInp.style.borderColor = '';
+                        }
+                    }
+
+                    // Hide/show save button based on any active duplicate error
+                    var nameHasError = document.getElementById('productNameError').style.display === 'block';
+                    var codeHasError = document.getElementById('productCodeError').style.display === 'block';
+                    document.getElementById('submitBtn').style.display = (nameHasError || codeHasError) ? 'none' : '';
+                })
+                .catch(function() {});
+        }, 400);
+    }
+
+    document.getElementById('productNameInput').addEventListener('blur', function() { checkProductDuplicate('name'); });
+    document.getElementById('productCodeInput').addEventListener('blur', function() { checkProductDuplicate('code'); });
+
+    // Clear errors when user types (re-enable save button while typing so they can fix)
+    document.getElementById('productNameInput').addEventListener('input', function() {
+        document.getElementById('productNameError').style.display = 'none';
+        document.getElementById('productNameInput').style.borderColor = '';
+        document.getElementById('submitBtn').style.display = '';
+    });
+    document.getElementById('productCodeInput').addEventListener('input', function() {
+        document.getElementById('productCodeError').style.display = 'none';
+        document.getElementById('productCodeInput').style.borderColor = '';
+        document.getElementById('submitBtn').style.display = '';
+    });
 
     // Load products on page load
     document.addEventListener('DOMContentLoaded', function() {

@@ -122,10 +122,76 @@ function openAddProductModal() {
     $('#modal_commission').val('0.00');
     $('#modal_categoryId').val('');
     $('#modal_brandId').val('');
+
+    // Clear any previous duplicate errors
+    _clearModalDupErrors();
+
     var modal = new bootstrap.Modal(document.getElementById('addProductModal'));
     modal.show();
     setTimeout(function() { $('#modal_productName').focus(); }, 400);
 }
+
+/////////////////////////////
+// Duplicate check for modal
+var _modalDupTimer = null;
+function _clearModalDupErrors() {
+    $('#modal_productNameError').remove();
+    $('#modal_productCodeError').remove();
+    $('#modal_productName').css('border-color', '');
+    $('#modal_productCode').css('border-color', '');
+    $('#saveNewProductBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i>Save Product');
+}
+function _checkModalDuplicate(field) {
+    clearTimeout(_modalDupTimer);
+    _modalDupTimer = setTimeout(function() {
+        var name = $('#modal_productName').val().trim();
+        var code = $('#modal_productCode').val().trim();
+        var params = 'excludeId=0';
+        if (field === 'name' && name) params += '&name=' + encodeURIComponent(name);
+        if (field === 'code' && code) params += '&code=' + encodeURIComponent(code);
+
+        $.getJSON(contextPath + '/product/master/product/checkDuplicate.jsp?' + params, function(res) {
+            if (field === 'name') {
+                $('#modal_productNameError').remove();
+                if (res.nameDuplicate) {
+                    $('#modal_productName').css('border-color', '#dc2626')
+                        .after('<div id="modal_productNameError" class="text-danger" style="font-size:0.8rem;"><i class="fas fa-exclamation-circle me-1"></i>Product name already exists!</div>');
+                } else {
+                    $('#modal_productName').css('border-color', '');
+                }
+            }
+            if (field === 'code') {
+                $('#modal_productCodeError').remove();
+                if (res.codeDuplicate) {
+                    $('#modal_productCode').css('border-color', '#dc2626')
+                        .after('<div id="modal_productCodeError" class="text-danger" style="font-size:0.8rem;"><i class="fas fa-exclamation-circle me-1"></i>Product code already exists!</div>');
+                } else {
+                    $('#modal_productCode').css('border-color', '');
+                }
+            }
+            // Hide save button if any duplicate error is showing
+            var hasErr = $('#modal_productNameError').length > 0 || $('#modal_productCodeError').length > 0;
+            if (hasErr) {
+                $('#saveNewProductBtn').prop('disabled', true);
+            } else {
+                $('#saveNewProductBtn').prop('disabled', false);
+            }
+        });
+    }, 400);
+}
+
+$(document).on('blur', '#modal_productName', function() { _checkModalDuplicate('name'); });
+$(document).on('blur', '#modal_productCode', function() { _checkModalDuplicate('code'); });
+$(document).on('input', '#modal_productName', function() {
+    $('#modal_productNameError').remove();
+    $(this).css('border-color', '');
+    if (!$('#modal_productCodeError').length) $('#saveNewProductBtn').prop('disabled', false);
+});
+$(document).on('input', '#modal_productCode', function() {
+    $('#modal_productCodeError').remove();
+    $(this).css('border-color', '');
+    if (!$('#modal_productNameError').length) $('#saveNewProductBtn').prop('disabled', false);
+});
 /////////////////////////////
 function handleModalDiscTypeChange(sel) {
     if (sel.value === '0') {
@@ -139,6 +205,10 @@ function saveNewProductModal() {
     var form = document.getElementById('addProductModalForm');
     if (!form.checkValidity()) {
         form.reportValidity();
+        return;
+    }
+    // Block save if duplicate errors are visible
+    if ($('#modal_productNameError').length > 0 || $('#modal_productCodeError').length > 0) {
         return;
     }
     var btn = $('#saveNewProductBtn');
