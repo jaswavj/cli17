@@ -51,50 +51,50 @@ String purchaseId = request.getParameter("id");
         <!-- Top Section: Purchase Info -->
         <div class="card m-2 flex-shrink-0">
             <div class="card-body p-2">
-                <div class="row g-2">
-                    <div class="col-md-3">
+                <div class="row g-1">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Invoice No</label>
                             <span class="fw-bold"><%= header.elementAt(1) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Invoice Date</label>
                             <span class="fw-bold"><%= header.elementAt(2) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Supplier</label>
                             <span class="fw-bold"><%= header.elementAt(9) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Entry Date</label>
                             <span class="fw-bold"><%= header.elementAt(6) %> <%= header.elementAt(7) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Entered By</label>
                             <span class="fw-bold"><%= header.elementAt(8) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Total Amount</label>
                             <span class="fw-bold text-primary">₹<%= header.elementAt(3) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Paid Amount</label>
                             <span class="fw-bold text-success">₹<%= header.elementAt(4) %></span>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3">
                         <div class="border rounded p-1 bg-light">
                             <label class="form-label-sm d-block">Balance</label>
                             <span class="fw-bold text-danger">₹<%= header.elementAt(5) %></span>
@@ -105,7 +105,7 @@ String purchaseId = request.getParameter("id");
         </div>
 
         <!-- Middle Section: Table -->
-        <div class="flex-grow-1 overflow-auto px-2">
+        <div class="flex-grow-1 overflow-auto px-2" style="min-height: 0;">
             <table class="table table-bordered table-sm table-hover mb-0">
                 <thead class="table-light">
                     <tr>
